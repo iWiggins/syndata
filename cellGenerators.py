@@ -35,7 +35,13 @@ class IntCellGenerator(CellGeneratorBase):
 
 class CellGenerator(CellGeneratorBase):
     _generator: Callable[[int], Any]
-    def __init__(self, generator: Callable[[int], Any]) -> None:
+    def __init__(self, generator: Callable[[int], Any]):
         self._generator = generator
     def generate_cell(self, row: int) -> Any:
         return self._generator(row)
+
+class IndexCellGenerator(CellGeneratorBase):
+    def __init__(self):
+        pass
+    def generate_cell(self, row: int) -> Any:
+        return row

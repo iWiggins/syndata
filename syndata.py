@@ -1,9 +1,9 @@
 from cellgeneratorbase import CellGeneratorBase
-from cellGenerators import CellGenerator, FloatCellGenerator, IntCellGenerator, StringCellGenerator
+from presenterBase import PresenterBase
+from presenters import CSVPresenter, TXTPresenter
+from cellGenerators import CellGenerator, FloatCellGenerator, IntCellGenerator, StringCellGenerator, IndexCellGenerator
 from rowprocessorbase import RowProcessorBase
 from rowprocessors import CellCorruptionProcessor, CellNullProcessor
-from csv import writer
-from csv import QUOTE_STRINGS
 from typing import Self, Generator, Any, Callable
 
 class SynDataGenerator:
@@ -41,6 +41,11 @@ class SynDataGenerator:
         self._cells.append(CellGenerator(generator))
         return self
 
+    def addIndex(self, header: str) -> Self:
+        self._headers.append(header)
+        self._cells.append(IndexCellGenerator())
+        return self
+
     def addProcessor(self, processor: RowProcessorBase) -> Self:
         self._processors.append(processor)
         return self
@@ -64,8 +69,15 @@ class SynDataGenerator:
                 row = processor.process_row(row)
             yield row
     
-    def dump(self, filename: str, count: int):
-        with open(filename, 'w', newline='') as file:
-            write = writer(file, quoting=QUOTE_STRINGS)
-            write.writerow(self._headers)
-            write.writerows(self.generate(count))
+    def dump(self, presenter: PresenterBase, count: int) -> Self:
+        data = self.generate(count)
+        presenter.present(self._headers, data)
+        return self
+    
+    def dumpCSV(self, filename: str, count: int, showHeaders: bool = True) -> Self:
+        CSVPresenter(filename, showHeaders).present(self._headers, self.generate(count))
+        return self
+
+    def dumpTXT(self, filename: str, count: int, separators: list[str] | str, ending: str = '\n') -> Self:
+        TXTPresenter(filename, separators, ending).present(self._headers, self.generate(count))
+        return self
